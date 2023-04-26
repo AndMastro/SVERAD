@@ -160,7 +160,6 @@ def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gam
 
     coalition_iterator = product(range(n_intersecting_features + 1), range(n_difference_features))
 
-    n_comb = math.factorial(total_features)
     # skipping empty coaliton as this is done already
     # this could be further optimized if we confirm the simplification in the paper
     _ = next(coalition_iterator)
