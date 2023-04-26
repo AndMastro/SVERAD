@@ -29,14 +29,14 @@ def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float =
     norm_1 = np.multiply(matrix_a, matrix_a).sum(axis=1)
     norm_2 = np.multiply(matrix_b, matrix_b).sum(axis=1)
     distance_squared = np.add.outer(norm_1, norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose())
-    print(distance_squared)
+    
     if sigma is not None:
         gamma = 1 / (2 * sigma ** 2)
     return np.exp(-gamma * distance_squared)
 
 def rbf_kernel(x: np.ndarray, y: np.ndarray, gamma: float = 1.0, sigma: float = None):
     euclidean_distance = np.linalg.norm(x - y, ord=2)
-    print(euclidean_distance**2)
+    
     if sigma is not None:
         gamma = 1 / (2 * sigma ** 2)
     return np.exp(-gamma * (euclidean_distance**2))
@@ -47,14 +47,18 @@ class ExactRBFShapleyComputation:
     """Calculates the Shapley value according to the Shapley formalism for the RBF kernel.
         (Enumerates all possible coalitions, exponential cost!)
     """
-    def __init__(self, ref_arr):
+    def __init__(self, ref_arr, gamma: float = 1.0, sigma: float = None):
         self.ref_arr = ref_arr
+        self.gamma = gamma
+        if sigma is not None:
+            self.gamma = 1 / (2 * sigma ** 2)
+
     def rbf_kernel_value(self, x):
-        """Calculates the similarity of an instance x to the initialized vector `ref_arr`.
-        This can be treated equivalent to a prediction of the similarity to ref_arr given x.
+        """Calculates the RBF kernel of an instance x with initialized vector `ref_arr`.
+        This can be treated equivalent to a prediction of the RBF kernel value to ref_arr given x.
         Hence, we can explain the similarity with SHAP.
         """
-        return rbf_kernel_matrix(x, self.ref_arr.reshape((1, -1)))
+        return rbf_kernel_matrix(x, self.ref_arr.reshape((1, -1)), self.gamma)
 
     def shapley_values(self, x):
         ref = self.ref_arr
@@ -74,7 +78,7 @@ class ExactRBFShapleyComputation:
                         # if the feature is absent in both instances, it does not affect the RBF kernel value.
                         # shapley value += 0 , or simply skip
                         continue
-                    shapley_value += ((f_x*f_ref) -0) * inv_muiltinom_coeff(x.shape[0], coal_size)
+                    shapley_value += (rbf_kernel(np.array([f_x]), np.array([f_ref]), gamma = self.gamma) -0) * inv_muiltinom_coeff(x.shape[0], coal_size)
                     continue
                 feature_indices = np.arange(0, remaining_f_x.shape[0], dtype=int)
 
@@ -95,6 +99,101 @@ class ExactRBFShapleyComputation:
                         shapley_value += (rbf_kernel(coal_x_fi, coal_ref_refi) - rbf_kernel(coal_x, coal_ref)) * inv_muiltinom_coeff(x.shape[0], coal_size)
             shapley_vector.append(shapley_value)
         return np.array(shapley_vector)
+    
+
+#functions to compute SV as SVERAD values
+def sverad_f_plus(n_intersecting_features: int, n_difference_features: int):
+    """
+    Function to compute SV as SVERAD values for intersecting features. As described in the paper, this
+    value only depends on the inverse multinomial coefficient. Given an intersecting
+    feature contributes only when added to the empty coalition. 
+
+    Parameters
+    ----------
+    n_intersecting_features: int
+        toatl number of features in the intersection of the two instances
+    n_difference_features:
+        total number of features in the symmetric difference of the two instances
+    
+    Returns
+    -------
+        float
+        SV as SVERAD value for the feature
+    """
+    if n_intersecting_features == 0:
+        return 0 #conforming to SV formalism, absent feature do not contribute
+    
+    return inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
+
+
+def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gamma:float = 1.0, sigma: float = None):
+    """
+    Function to compute SV as SVERAD values for symmetric difference features.
+    We presente the simplified and more efficient solution as described in the paper.
+
+    Parameters
+    ----------
+    n_intersecting_features: int
+    n_difference_features: int
+    gamma: float
+        inverse of the squared sigma value.
+    sigma: float
+        sigma value. If defined, gamma is ignored.
+
+    Returns
+    -------
+    float
+
+    """
+
+    if sigma is not None:
+        gamma = 1 / (2 * sigma**2)
+
+    if n_difference_features == 0:
+        return 0 #conforming to SV formalism, absent feature do not contribute
+    
+    sverad_value = 0
+    total_features = n_intersecting_features + n_difference_features
+
+    # contribution to the empty coalition
+    sverad_value += np.exp(-gamma) * inv_muiltinom_coeff(total_features, 0)
+
+    coalition_iterator = product(range(n_intersecting_features + 1), range(n_difference_features))
+
+    n_comb = math.factorial(total_features)
+    # skipping empty coaliton as this is done already
+    # this could be further optimized if we confirm the simplification in the paper
+    _ = next(coalition_iterator)
+    for int_features, sym_diff_features in coalition_iterator:
+        delta_rbf_value = rbf_obtimized(sym_diff_features+1) - rbf_obtimized(sym_diff_features)
+        n_repr_coal = binom(n_intersecting_features, int_features) * binom(n_difference_features - 1, sym_diff_features)
+        sverad_value += delta_rbf_value * n_repr_coal * inv_muiltinom_coeff(total_features, int_features + sym_diff_features)
+    
+    return sverad_value
+
+def rbf_obtimized(n_difference_features: int, gamma:float = 1.0, sigma: float = None):
+    """
+    Function to compute RBF using the number of symmetric difference features.
+
+    Parameters
+    ----------
+    n_intersecting_features: int
+    n_difference_features: int
+    gamma: float
+        inverse of the squared sigma value.
+    sigma: float
+        sigma value. If defined, gamma is ignored.
+
+    Returns
+    -------
+    float
+
+    """
+    
+    if sigma is not None:
+        gamma = 1 / (2 * sigma**2)
+
+    return np.exp(-gamma*n_difference_features)
 ####################################################################################
 
 def tanimoto_similarity_sparse(matrix_a: sparse.csr_matrix, matrix_b: sparse.csr_matrix):
@@ -158,73 +257,3 @@ def inv_muiltinom_coeff(number_of_players: int, coalition_size: int) -> float:
 
     return n_permutations_remaining_players * n_permutations_coalition / n_total_permutations
 
-
-def sveta_f_plus(n_intersecting_features: int, n_difference_features: int, no_player_value: float = 0):
-    """
-
-    Parameters
-    ----------
-    n_intersecting_features
-    n_difference_features
-    no_player_value: float
-        value of an empty coalition. Should be always zero. Likely to be removed later.
-
-    Returns
-    -------
-
-    """
-    if n_intersecting_features == 0:
-        return 0
-
-    shap_sum = np.float64(0)
-    total_features = n_intersecting_features + n_difference_features
-    # sampling contribution to empty coalition
-    # Tanimoto of emtpy would cause an error (0/0) so it is manually set to the value of no_player_value
-    shap_sum += (1 - no_player_value) * inv_muiltinom_coeff(total_features, 0)
-
-    coalition_iterator = product(range(n_intersecting_features), range(n_difference_features + 1))
-
-    # skipping empty coaliton as this is done already
-    _ = next(coalition_iterator)
-    for coal_present, coal_absent in coalition_iterator:
-        coal_size = coal_absent + coal_present
-        d_tanimoto = coal_absent / (coal_size * coal_size + coal_size)
-        n_repr_coal = binom(n_difference_features, coal_absent) * binom(n_intersecting_features - 1, coal_present)
-        shap_sum += d_tanimoto * inv_muiltinom_coeff(total_features, coal_size) * n_repr_coal
-    return shap_sum
-
-
-def sveta_f_minus(n_intersecting_features: int, n_difference_features: int, no_player_value: int = 0):
-    """
-
-    Parameters
-    ----------
-    n_intersecting_features: int
-    n_difference_features: int
-    no_player_value:float
-        value of an empty coalition. Should be always zero. Likely to be removed later.
-
-    Returns
-    -------
-    float
-
-    """
-    if n_difference_features == 0:
-        return 0
-    shap_sum = 0
-    total_features = n_intersecting_features + n_difference_features
-
-    # sampling contribution to empty coalition
-    # Tanimoto of emtpy would cause an error (0/0) so it is manually set to the value of no_player_value
-    shap_sum += (0 - no_player_value) * inv_muiltinom_coeff(total_features, 0)
-    coalition_iterator = product(range(n_intersecting_features + 1), range(n_difference_features))
-
-    n_comb = math.factorial(total_features)
-    # skipping empty coaliton as this is done already
-    _ = next(coalition_iterator)
-    for coal_present, coal_absent in coalition_iterator:
-        coal_size = coal_absent + coal_present
-        d_tanimoto = -coal_present / (coal_size * coal_size + coal_size)
-        n_repr_coal = binom(n_difference_features - 1, coal_absent) * binom(n_intersecting_features, coal_present)
-        shap_sum += d_tanimoto * inv_muiltinom_coeff(total_features, coal_present + coal_absent) * n_repr_coal
-    return shap_sum
