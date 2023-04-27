@@ -1,13 +1,9 @@
 from itertools import product
-import math
 import numpy as np
-from scipy import sparse
 from scipy.special import binom
 from itertools import combinations
+from src.utils import inv_muiltinom_coeff
 
-##############my functions#####################
-
-#TODO: change gamma with sigma
 def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float = 1.0, sigma: float = None):
     """Calculates the RBF kernel between two matrices and returns a similarity matrix.
 
@@ -35,6 +31,24 @@ def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float =
     return np.exp(-gamma * distance_squared)
 
 def rbf_kernel(x: np.ndarray, y: np.ndarray, gamma: float = 1.0, sigma: float = None):
+    """Calculates the RBF kernel between two vector and returns a float.
+
+    Parameters
+    ----------
+    x: np.ndarray
+        vector x
+    y: np.ndarray
+        vector y
+    gamma: float
+        gamma parameter of the RBF kernel
+    sigma: float
+        sigma parameter of the RBF kernel, if not None, gamma is calculated as 1/(2*sigma**2).
+        Any value given to gamma when sigma is not None is ignored.
+    Returns
+    -------
+        float
+    """
+
     euclidean_distance = np.linalg.norm(x - y, ord=2)
     
     if sigma is not None:
@@ -176,7 +190,6 @@ def rbf_obtimized(n_difference_features: int, gamma:float = 1.0, sigma: float = 
 
     Parameters
     ----------
-    n_intersecting_features: int
     n_difference_features: int
     gamma: float
         inverse of the squared sigma value.
@@ -193,66 +206,45 @@ def rbf_obtimized(n_difference_features: int, gamma:float = 1.0, sigma: float = 
         gamma = 1 / (2 * sigma**2)
 
     return np.exp(-gamma*n_difference_features)
-####################################################################################
 
-def tanimoto_similarity_sparse(matrix_a: sparse.csr_matrix, matrix_b: sparse.csr_matrix):
-    """Calculates the Tanimoto similarity between two sparse matrices and returns a similarity matrix.
+
+
+def compute_sverad_sv(x: np.ndarray, y: np.ndarray, gamma:float = 1.0, sigma: float = None):
+
+    """
+    Computes the SVERAD SVs for the RBF kernel given two instances.
 
     Parameters
     ----------
-    matrix_a: sparse.csr_matrix
-        matrix a
-    matrix_b: sparse.csr_matrix
-        matrix b
+    x: np.ndarray
+        vector x
+    y: np.ndarray
+        vector y
+    gamma: float
+        gamma parameter of the RBF kernel
+    sigma: float
+        sigma parameter of the RBF kernel, if not None, gamma is calculated as 1/(2*sigma**2).
+        Any value given to gamma when sigma is not None is ignored.
+
     Returns
     -------
-        np.ndarray
+    np.ndarray
+
     """
-    intersection = matrix_a.dot(matrix_b.transpose()).toarray()
-    norm_1 = np.array(matrix_a.multiply(matrix_a).sum(axis=1))
-    norm_2 = np.array(matrix_b.multiply(matrix_b).sum(axis=1))
-    union = norm_1 + norm_2.T - intersection
-    return intersection / union
 
+    if sigma is not None:
+        gamma = 1 / (2 * sigma**2)
 
-def tanimoto_similarity_dense(matrix_a: np.ndarray, matrix_b: np.ndarray):
-    """Calculates the Tanimoto similarity between two dense matrices and returns a similarity matrix.
+    intersection_xy = x * y  # Vector where intersecting features are set to 1
+    union_xy = 1 - (1-x) * (1-y)  # Vector where features of the union are set to 1
+    diff_xy = union_xy - intersection_xy  # Vector where features from the symmetric difference are set to 1
+    
+    num_intersecting_features = sum(intersection_xy)
+    num_difference_features = sum(diff_xy)
 
-    Parameters
-    ----------
-    matrix_a: np.ndarray
-        matrix a
-    matrix_b: np.ndarray
-        matrix b
-    Returns
-    -------
-        np.ndarray
-    """
-    intersection = matrix_a.dot(matrix_b.transpose())
-    norm_1 = np.multiply(matrix_a, matrix_a).sum(axis=1)
-    norm_2 = np.multiply(matrix_b, matrix_b).sum(axis=1)
-    union = np.add.outer(norm_1, norm_2.T) - intersection
+    sverad_value_f_plus_xy = sverad_f_plus(num_intersecting_features, num_difference_features)
+    sverad_value_f_minus_xy = sverad_f_minus(num_intersecting_features, num_difference_features, gamma=gamma)
 
-    return intersection / union
+    sverad_values_xy = intersection_xy * sverad_value_f_plus_xy + diff_xy * sverad_value_f_minus_xy
 
-
-def inv_muiltinom_coeff(number_of_players: int, coalition_size: int) -> float:
-    """Factor to weight coalitions ins the Shapley formalism.
-
-    Parameters
-    ----------
-    number_of_players: int
-        total number of available players according to the Shapley formalism
-    coalition_size
-        number of players selected for a coalition
-    Returns
-    -------
-        float
-        weight for contribution of coalition
-    """
-    n_total_permutations = math.factorial(number_of_players)
-    n_permutations_coalition = math.factorial(coalition_size)
-    n_permutations_remaining_players = math.factorial(number_of_players - 1 - coalition_size)
-
-    return n_permutations_remaining_players * n_permutations_coalition / n_total_permutations
-
+    return sverad_values_xy
