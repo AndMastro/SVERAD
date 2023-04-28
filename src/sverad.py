@@ -1,6 +1,7 @@
 from itertools import product
 import numpy as np
 from scipy.special import binom
+from scipy import sparse
 from itertools import combinations
 from src.utils import inv_muiltinom_coeff
 
@@ -25,6 +26,33 @@ def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float =
     norm_1 = np.multiply(matrix_a, matrix_a).sum(axis=1)
     norm_2 = np.multiply(matrix_b, matrix_b).sum(axis=1)
     distance_squared = np.add.outer(norm_1, norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose())
+    
+    if sigma is not None:
+        gamma = 1 / (2 * sigma ** 2)
+    return np.exp(-gamma * distance_squared)
+
+def rbf_kernel_matrix_sparse(matrix_a: sparse.csr_matrix, matrix_b: sparse.csr_matrix, gamma: float = 1.0, sigma: float = None):
+    """Calculates the RBF kernel between two matrices and returns a similarity matrix.
+
+    Parameters
+    ----------
+    matrix_a: np.ndarray
+        matrix a
+    matrix_b: np.ndarray
+        matrix b
+    gamma: float
+        gamma parameter of the RBF kernel
+    sigma: float
+        sigma parameter of the RBF kernel, if not None, gamma is calculated as 1/(2*sigma**2).
+        Any value given to gamma when sigma is not None is ignored.
+    Returns
+    -------
+        np.ndarray
+    """
+    
+    norm_1 = np.array(matrix_a.multiply(matrix_a).sum(axis=1))
+    norm_2 = np.array(matrix_b.multiply(matrix_b).sum(axis=1))
+    distance_squared = (norm_1 + norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose())
     
     if sigma is not None:
         gamma = 1 / (2 * sigma ** 2)
@@ -178,15 +206,15 @@ def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gam
     # this could be further optimized if we confirm the simplification in the paper
     _ = next(coalition_iterator)
     for int_features, sym_diff_features in coalition_iterator:
-        delta_rbf_value = rbf_obtimized(sym_diff_features+1) - rbf_obtimized(sym_diff_features)
+        delta_rbf_value = rbf_kernel_optimized(sym_diff_features+1, gamma=gamma) - rbf_kernel_optimized(sym_diff_features, gamma=gamma) #TODO edited to add gamma, so check again if correct
         n_repr_coal = binom(n_intersecting_features, int_features) * binom(n_difference_features - 1, sym_diff_features)
         sverad_value += delta_rbf_value * n_repr_coal * inv_muiltinom_coeff(total_features, int_features + sym_diff_features)
     
     return sverad_value
 
-def rbf_obtimized(n_difference_features: int, gamma:float = 1.0, sigma: float = None):
+def rbf_kernel_optimized(n_difference_features: int, gamma:float = 1.0, sigma: float = None):
     """
-    Function to compute RBF using the number of symmetric difference features.
+    Function to compute RBF kernel using the number of symmetric difference features.
 
     Parameters
     ----------
