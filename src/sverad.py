@@ -52,7 +52,7 @@ def rbf_kernel_matrix_sparse(matrix_a: sparse.csr_matrix, matrix_b: sparse.csr_m
     
     norm_1 = np.array(matrix_a.multiply(matrix_a).sum(axis=1))
     norm_2 = np.array(matrix_b.multiply(matrix_b).sum(axis=1))
-    distance_squared = (norm_1 + norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose())
+    distance_squared = (norm_1 + norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose()).toarray()
     
     if sigma is not None:
         gamma = 1 / (2 * sigma ** 2)
