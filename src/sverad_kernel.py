@@ -4,6 +4,7 @@ from scipy.special import binom
 from scipy import sparse
 from itertools import combinations
 from src.utils import inv_muiltinom_coeff
+from sklearn.metrics.pairwise import euclidean_distances
 
 def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float = 1.0, sigma: float = None):
     """Calculates the RBF kernel between two matrices and returns a similarity matrix.
@@ -276,3 +277,39 @@ def compute_sverad_sv(x: np.ndarray, y: np.ndarray, gamma:float = 1.0, sigma: fl
     sverad_values_xy = intersection_xy * sverad_value_f_plus_xy + diff_xy * sverad_value_f_minus_xy
 
     return sverad_values_xy
+
+
+def rbf_kernel_closure_function(gamma: float):
+    """This closure function is used for compatibility with sklearn SVM code. Do not use it anywhere else.
+
+        Parameters
+        ----------
+        gamma: float
+            gamma parameter of the RBF kernel
+        Returns
+        -------
+            np.ndarray
+        """
+
+    def rbf_kernel_matrix_sparse_(matrix_a: sparse.csr_matrix, matrix_b: sparse.csr_matrix):
+    
+
+        norm_1 = np.array(matrix_a.multiply(matrix_a).sum(axis=1))
+        norm_2 = np.array(matrix_b.multiply(matrix_b).sum(axis=1))
+        distance_squared = (norm_1 + norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose()).toarray()
+        # gamma = 0.0001
+        print("Gamma passed to function:" , gamma)
+        # print(np.exp(-gamma * distance_squared).shape)
+        return np.exp(-gamma * distance_squared)
+    # def rbf_kernel_(X, Y): #implementation from sklearn
+    #     # if gamma is None:
+    #     #     gamma = 1.0 / X.shape[1]
+    #     K = euclidean_distances(X, Y, squared=True)
+    #     # gamma=10
+    #     # print(gamma)
+    #     # print(gamma)
+    #     K *= -gamma
+    #     np.exp(K, K)  # exponentiate K in-place
+    #     return K
+
+    return rbf_kernel_matrix_sparse_

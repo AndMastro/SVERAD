@@ -1,4 +1,4 @@
-from src.sverad_kernel import rbf_kernel_matrix_sparse, sverad_f_plus, sverad_f_minus
+from src.sverad_kernel import rbf_kernel_matrix_sparse, sverad_f_plus, sverad_f_minus, rbf_kernel_closure_function
 
 import abc
 import numpy as np
@@ -32,13 +32,13 @@ class ExplainingSVM(abc.ABC):
     """ Baseclass for SVC and SVR. Saves support vectors explicitly.
 
     """
-    def __init__(self, no_player_value=0, gamma: float = 1.0, sigma: float = None):
+    def __init__(self, no_player_value=0, gamma_value: float = 1.0, sigma: float = None):
         self._explicit_support_vectors = None
         self.calculated_shapley_values = dict()
         self.no_player_value = no_player_value
-        self.gamma = gamma
+        self.g = gamma_value 
         if sigma is not None:
-            self.gamma = 1 / (2 * sigma ** 2)
+            self.g = 1 / (2 * sigma ** 2)
 
     def vector_feature_weights(self, vector: sparse.csr_matrix) -> np.ndarray:
         """Shapley values for `vector` using SVERAD.
@@ -85,10 +85,11 @@ class ExplainingSVM(abc.ABC):
         feature_contrib_sim += np.array(only_support.toarray(), dtype=np.float64) * weight_difference.reshape(-1, 1)
 
         # Asserting SVs match rbf kernel values.
-        sim = rbf_kernel_matrix_sparse(vector, support_vectors, gamma = self.gamma) #TODO check if correct
+        sim = rbf_kernel_matrix_sparse(vector, support_vectors, gamma = self.g) #TODO check if correct
         assert np.all(np.isclose(sim[0], feature_contrib_sim.sum(axis=1) + self.no_player_value))
 
         # Multiplying SVERAD values with weight and class label (both together are called dual_coeff)
+        # print(feature_contrib_sim.shape, dual_coeff.shape)
         fw = feature_contrib_sim * dual_coeff
         # Summation over all support vectors
         fw = fw.sum(axis=0)
@@ -101,7 +102,7 @@ class ExplainingSVM(abc.ABC):
             return self.calculated_shapley_values[(n_f_plus, n_f_minus)][0] #0 is f_plus. Return if already calculated
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
             sv_p := sverad_f_plus(n_f_plus, n_f_minus),
-            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.gamma))
+            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.g))
         return sv_p
 
     def get_sverad_f_minus(self, n_f_plus, n_f_minus):
@@ -111,7 +112,7 @@ class ExplainingSVM(abc.ABC):
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
             sverad_f_plus(n_f_plus, n_f_minus),
             sv_m := sverad_f_minus(n_f_plus, n_f_minus,
-            gamma=self.gamma))
+            gamma=self.g))
         return sv_m
 
     @property
@@ -131,8 +132,8 @@ class ExplainingSVR(SVR, ExplainingSVM):
     def __init__(self, tol=0.001, C=1.0, epsilon=0.1, shrinking=True, cache_size=200, verbose=False, max_iter=- 1,
                  no_player_value=0):
         SVR.__init__(self,
-                     kernel=rbf_kernel_matrix_sparse, tol=tol, C=C, epsilon=epsilon, shrinking=shrinking,
-                     cache_size=cache_size, verbose=verbose, max_iter=max_iter)
+                     kernel="rbf", tol=tol, C=C, epsilon=epsilon, shrinking=shrinking,
+                     cache_size=cache_size, verbose=verbose, max_iter=max_iter) #rbf_kernel_closure_function(gamma=gamma) isnted of "rbf"
         ExplainingSVM.__init__(self, no_player_value=no_player_value)
 
     def fit(self, X, y, sample_weight=None):
@@ -150,15 +151,20 @@ class ExplainingSVC(SVC, ExplainingSVM):
     """ SVC copied form sklearn and modified
 
     """
-    def __init__(self, C=1.0, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None,
+    def __init__(self, C = None, gamma_value = None, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
                  verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
                  no_player_value=0):
+        self.gamma_value = gamma_value
+        ExplainingSVM.__init__(self, no_player_value,gamma_value=gamma_value)
         SVC.__init__(self, C=C, shrinking=shrinking, probability=probability, tol=tol,
-                     kernel=rbf_kernel_matrix_sparse, cache_size=cache_size, class_weight=class_weight,
+                     kernel=rbf_kernel_closure_function(gamma=gamma_value), cache_size=cache_size, class_weight=class_weight,
                      verbose=verbose, max_iter=max_iter,
                      decision_function_shape=decision_function_shape, break_ties=break_ties,
                      random_state=random_state)
-        ExplainingSVM.__init__(self, no_player_value)
+        
+        # print("Gamma:", self.g)
+        # print("C:", self.C)
+        
 
     def fit(self, X, y, sample_weight=None):
         x = super().fit(X, y, sample_weight=sample_weight)
@@ -169,14 +175,14 @@ class ExplainingSVC(SVC, ExplainingSVM):
     def predict_proba(self, X):
         """Native predict proba has small numerical differences. To keep everything consistent it is redefined.
         """
-        dist = (rbf_kernel_matrix_sparse(X, self._explicit_support_vectors) * self.dual_coef_).sum(axis=1)
+        dist = (rbf_kernel_matrix_sparse(X, self._explicit_support_vectors, self.g) * self.dual_coef_).sum(axis=1)
         dist += self.intercept_
         p = plattscaling(dist, self.probA_, self.probB_)
         pcls0 = 1 - p
         return np.vstack([pcls0, p]).T
 
     def predict_log_odds(self, X):
-        dist = (rbf_kernel_matrix_sparse(X, self._explicit_support_vectors) * self.dual_coef_).sum(axis=1)
+        dist = (rbf_kernel_matrix_sparse(X, self._explicit_support_vectors, self.g) * self.dual_coef_).sum(axis=1)
         dist += self.intercept_
         log_odds = -dist * self.probA_ + self.probB_
         return np.vstack([-log_odds, log_odds]).T
