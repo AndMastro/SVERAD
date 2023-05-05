@@ -32,13 +32,14 @@ class ExplainingSVM(abc.ABC):
     """ Baseclass for SVC and SVR. Saves support vectors explicitly.
 
     """
-    def __init__(self, no_player_value=0, gamma_value: float = 1.0, sigma: float = None):
+    def __init__(self, no_player_value=0, gamma_val: float = 1.0, sigma: float = None):
         self._explicit_support_vectors = None
         self.calculated_shapley_values = dict()
         self.no_player_value = no_player_value
-        self.g = gamma_value 
-        if sigma is not None:
+        self.g = gamma_val
+        if sigma is not None: #TODO check if ti works given how constuctors in python work. I think it works when you instatiate the class normally but not with clone.
             self.g = 1 / (2 * sigma ** 2)
+        # print("Gamma value in ExplainingSVM:", self.g)
 
     def vector_feature_weights(self, vector: sparse.csr_matrix) -> np.ndarray:
         """Shapley values for `vector` using SVERAD.
@@ -114,6 +115,12 @@ class ExplainingSVM(abc.ABC):
             sv_m := sverad_f_minus(n_f_plus, n_f_minus,
             gamma=self.g))
         return sv_m
+    
+    def set_gamma(self, gamma_v: float):
+        self.g = gamma_v
+
+    def get_gamma(self):
+        return self.g
 
     @property
     def explicit_support_vectors(self):
@@ -151,22 +158,49 @@ class ExplainingSVC(SVC, ExplainingSVM):
     """ SVC copied form sklearn and modified
 
     """
-    def __init__(self, C = None, gamma_value = None, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
+    def __init__(self, C=42.0, gamma_value=42.0, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
                  verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
                  no_player_value=0):
-        self.gamma_value = gamma_value
-        ExplainingSVM.__init__(self, no_player_value,gamma_value=gamma_value)
-        SVC.__init__(self, C=C, shrinking=shrinking, probability=probability, tol=tol,
-                     kernel=rbf_kernel_closure_function(gamma=gamma_value), cache_size=cache_size, class_weight=class_weight,
+       
+        
+        # print("Gamma value passed:", gamma_value)
+
+        
+        SVC.__init__(self, kernel= rbf_kernel_closure_function(gamma_value), C=C, gamma = gamma_value, shrinking=shrinking, probability=probability, tol=tol, #rbf_kernel_closure_function(gamma_value)
+                      cache_size=cache_size, class_weight=class_weight, 
                      verbose=verbose, max_iter=max_iter,
                      decision_function_shape=decision_function_shape, break_ties=break_ties,
                      random_state=random_state)
         
-        # print("Gamma:", self.g)
+        ExplainingSVM.__init__(self, no_player_value, gamma_value)
+        # print("Gamma set to self after super:", gamma_value)
+        
+        self.gamma_value = gamma_value
+        self.C = C
+        # print("Gamma value in init:", self.gamma_value) 
+        # self.set_gamma(gamma_v = self.gamma_value)
+        
+        # print("Gamma from super:", self.g)
         # print("C:", self.C)
         
+    # def _get_gamma_value(self, gamma_v: float):
+    #     if self.gamma_value == gamma_v:
+    #         return self.gamma_value
+    #     else:
+    #         self.gamma_value = gamma_v
+    #         return self.gamma_value
+    def set_params(self, **params):
+        for param, value in params.items():
+            setattr(self, param, value)
+            if param == 'gamma_value':
+                self.kernel = rbf_kernel_closure_function(value)
+                self.g = value
+                # print("Gamma value in set_params:", self.get_gamma())
+        return self
 
     def fit(self, X, y, sample_weight=None):
+        # print("Gamma value in fit:", self.gamma_value) #accessing gamma value from ExplainingSVM with super(ExplainingSVM, self).gamma_value
+        # print("C value:", self.C)
         x = super().fit(X, y, sample_weight=sample_weight)
         idx = self.support_
         self._explicit_support_vectors = X[idx]
@@ -198,3 +232,10 @@ class ExplainingSVC(SVC, ExplainingSVM):
     @property
     def expected_value(self):
         return -(self.intercept_ + np.sum(self.dual_coef_) * self.no_player_value) * self.probA_ + self.probB_
+
+def create_SVC(C, gamma_value, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
+                     verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
+                     no_player_value=0):
+    return ExplainingSVC(C=C, gamma_value=gamma_value, shrinking=shrinking, probability=probability, tol=tol, cache_size=cache_size, 
+                 class_weight=class_weight, verbose=verbose, max_iter=max_iter, decision_function_shape=decision_function_shape, 
+                 break_ties=break_ties, random_state=random_state, no_player_value=no_player_value)

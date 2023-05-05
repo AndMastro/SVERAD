@@ -298,7 +298,7 @@ def rbf_kernel_closure_function(gamma: float):
         norm_2 = np.array(matrix_b.multiply(matrix_b).sum(axis=1))
         distance_squared = (norm_1 + norm_2.T) - 2 * matrix_a.dot(matrix_b.transpose()).toarray()
         # gamma = 0.0001
-        print("Gamma passed to function:" , gamma)
+        # print("Gamma passed to kernel function:" , gamma)
         # print(np.exp(-gamma * distance_squared).shape)
         return np.exp(-gamma * distance_squared)
     # def rbf_kernel_(X, Y): #implementation from sklearn
