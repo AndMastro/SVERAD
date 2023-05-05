@@ -158,7 +158,7 @@ class ExplainingSVC(SVC, ExplainingSVM):
     """ SVC copied form sklearn and modified
 
     """
-    def __init__(self, C=42.0, gamma_value=42.0, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
+    def __init__(self, C=1.0, gamma_value=1.0, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
                  verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
                  no_player_value=0):
        
