@@ -9,9 +9,9 @@ If you want to use the code, we suggest to use a ```conda``` environmnet with on
 
 ## SVERAD facilities
 
-The class ```ExplainingSVC``` contains all the facilities needed to train a Support Vector Classifier and explain its predictions in term of exact SVERAD Shapley values.
+The class ```ExplainingSVC``` contains all the facilities needed to train a Support Vector Classifier and explain its predictions in terms of exact SVERAD Shapley values.
 
-If you want to indepentently compute SVERAD SV for RBF kernel in your code, used the function ```compute_sverad_sv()``` available in the ```sverad_kernel.py``` module. 
+If you want to indepentently compute SVERAD SV for RBF kernel in your code, use the function ```compute_sverad_sv()``` available in the ```sverad_kernel.py``` module. 
 
 ## Reproducibility
 
@@ -20,6 +20,7 @@ The repo contains the source code and the notebooks usable to reproduce the expe
 * ```explanations_rbf_random_vectors.ipynb``` replicates the experiments for the computation of exact SV with small randomly geenrated vectors.
 * ```rbf_50_compounds_SVERAD_vs_SHAP.ipynb``` compares SVERAD and SHAP for randomly drawn compounds.
 * ```calculation_SVs_SVM_RF.ipynb``` is used to both train and optimize the SVM and RF models via Grid Search and to compute exact SV with SVERAD and TreeSHAP and SHAP values with KernelSHAP.
+* ```analysis_SVs_SVM_RF.ipynb``` derives analyses and statistics on the computed SV and SHAP values.
 
 ### Contacts
 
