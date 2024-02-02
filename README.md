@@ -40,3 +40,5 @@ For any queries or information, feel free to drop an [email](mailto:mastropietro
 If you like and use our work, please cite our publication on **Scientific Reports** 😄
 
 Mastropietro, A., Feldmann, C. & Bajorath, J. [Calculation of exact Shapley values for explaining support vector machine models using the radial basis function kernel](https://www.nature.com/articles/s41598-023-46930-2). Sci Rep 13, 19561 (2023). https://doi.org/10.1038/s41598-023-46930-2
+
+Special thanks to [Simone Fiacco](https://www.linkedin.com/in/simone-fiacco-27bb5a25a/) for creating the SVERAD logo.
