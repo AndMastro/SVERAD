@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="docs/SVERAD_logo.svg" alt="SVERAD logo" width=20%>
+</p>
+
+
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 
 # SVERAD: Shapley Value-Expressed Radial Basis Function
