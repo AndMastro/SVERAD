@@ -103,6 +103,7 @@ class ExactRBFShapleyComputation:
         """
         return rbf_kernel_matrix(x, self.ref_arr.reshape((1, -1)), self.gamma)
 
+    #TODO implement no_player_value
     def shapley_values(self, x):
         ref = self.ref_arr
         assert x.shape == ref.shape
@@ -145,7 +146,7 @@ class ExactRBFShapleyComputation:
     
 
 #functions to compute SV as SVERAD values
-def sverad_f_plus(n_intersecting_features: int, n_difference_features: int):
+def sverad_f_plus(n_intersecting_features: int, n_difference_features: int, no_player_value: float = 0.0):
     """
     Function to compute SV as SVERAD values for intersecting features. As described in the paper, this
     value only depends on the inverse multinomial coefficient. Given an intersecting
@@ -166,10 +167,11 @@ def sverad_f_plus(n_intersecting_features: int, n_difference_features: int):
     if n_intersecting_features == 0:
         return 0 #conforming to SV formalism, absent feature do not contribute
     
-    return inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
+    #editing to support different no_player_value values
+    #return inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
+    return (1 - no_player_value) * inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
 
-
-def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gamma:float = 1.0, sigma: float = None):
+def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gamma:float = 1.0, sigma: float = None, no_player_value: float = 0.0):
     """
     Function to compute SV as SVERAD values for symmetric difference features.
     We presente the simplified and more efficient solution as described in the paper.
@@ -198,13 +200,14 @@ def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gam
     sverad_value = 0
     total_features = n_intersecting_features + n_difference_features
 
-    # contribution to the empty coalition
-    sverad_value += np.exp(-gamma) * inv_muiltinom_coeff(total_features, 0)
+    # contribution to the empty coalition. Edited to support no_player_value
+    #sverad_value += np.exp(-gamma) * inv_muiltinom_coeff(total_features, 0)
+    sverad_value += (np.exp(-gamma) - no_player_value) * inv_muiltinom_coeff(total_features, 0)
 
     coalition_iterator = product(range(n_intersecting_features + 1), range(n_difference_features))
 
     # skipping empty coaliton as this is done already
-    # this could be further optimized if we confirm the simplification in the paper
+    # this could be further optimized conforming to the simplification in the paper
     _ = next(coalition_iterator)
     for int_features, sym_diff_features in coalition_iterator:
         delta_rbf_value = rbf_kernel_optimized(sym_diff_features+1, gamma=gamma) - rbf_kernel_optimized(sym_diff_features, gamma=gamma) #TODO edited to add gamma, so check again if correct

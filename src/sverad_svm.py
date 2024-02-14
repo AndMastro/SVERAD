@@ -102,8 +102,8 @@ class ExplainingSVM(abc.ABC):
         if (n_f_plus, n_f_minus) in self.calculated_shapley_values:
             return self.calculated_shapley_values[(n_f_plus, n_f_minus)][0] #0 is f_plus. Return if already calculated
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
-            sv_p := sverad_f_plus(n_f_plus, n_f_minus),
-            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.g))
+            sv_p := sverad_f_plus(n_f_plus, n_f_minus, self.no_player_value),
+            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.g, no_player_value=self.no_player_value))
         return sv_p
 
     def get_sverad_f_minus(self, n_f_plus, n_f_minus):
@@ -111,9 +111,9 @@ class ExplainingSVM(abc.ABC):
         if (n_f_plus, n_f_minus) in self.calculated_shapley_values:
             return self.calculated_shapley_values[(n_f_plus, n_f_minus)][1] #1 is f_minus. Return if already calculated
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
-            sverad_f_plus(n_f_plus, n_f_minus),
+            sverad_f_plus(n_f_plus, n_f_minus, self.no_player_value),
             sv_m := sverad_f_minus(n_f_plus, n_f_minus,
-            gamma=self.g))
+            gamma=self.g, no_player_value=self.no_player_value))
         return sv_m
     
     def set_gamma(self, gamma_v: float):
