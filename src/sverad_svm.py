@@ -32,10 +32,10 @@ class ExplainingSVM(abc.ABC):
     """ Baseclass for SVC and SVR. Saves support vectors explicitly.
 
     """
-    def __init__(self, no_player_value=0, gamma_val: float = 1.0, sigma: float = None):
+    def __init__(self, empty_set_value=0, gamma_val: float = 1.0, sigma: float = None):
         self._explicit_support_vectors = None
         self.calculated_shapley_values = dict()
-        self.no_player_value = no_player_value
+        self.empty_set_value = empty_set_value
         self.g = gamma_val
         if sigma is not None: #TODO check if ti works given how constuctors in python work. I think it works when you instatiate the class normally but not with clone.
             self.g = 1 / (2 * sigma ** 2)
@@ -87,7 +87,7 @@ class ExplainingSVM(abc.ABC):
 
         # Asserting SVs match rbf kernel values.
         sim = rbf_kernel_matrix_sparse(vector, support_vectors, gamma = self.g) #TODO check if correct
-        assert np.all(np.isclose(sim[0], feature_contrib_sim.sum(axis=1) + self.no_player_value))
+        assert np.all(np.isclose(sim[0], feature_contrib_sim.sum(axis=1) + self.empty_set_value))
 
         # Multiplying SVERAD values with weight and class label (both together are called dual_coeff)
         # print(feature_contrib_sim.shape, dual_coeff.shape)
@@ -102,8 +102,8 @@ class ExplainingSVM(abc.ABC):
         if (n_f_plus, n_f_minus) in self.calculated_shapley_values:
             return self.calculated_shapley_values[(n_f_plus, n_f_minus)][0] #0 is f_plus. Return if already calculated
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
-            sv_p := sverad_f_plus(n_f_plus, n_f_minus, self.no_player_value),
-            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.g, no_player_value=self.no_player_value))
+            sv_p := sverad_f_plus(n_f_plus, n_f_minus, self.empty_set_value),
+            sverad_f_minus(n_f_plus, n_f_minus, gamma=self.g, empty_set_value=self.empty_set_value))
         return sv_p
 
     def get_sverad_f_minus(self, n_f_plus, n_f_minus):
@@ -111,9 +111,9 @@ class ExplainingSVM(abc.ABC):
         if (n_f_plus, n_f_minus) in self.calculated_shapley_values:
             return self.calculated_shapley_values[(n_f_plus, n_f_minus)][1] #1 is f_minus. Return if already calculated
         self.calculated_shapley_values[(n_f_plus, n_f_minus)] = (
-            sverad_f_plus(n_f_plus, n_f_minus, self.no_player_value),
+            sverad_f_plus(n_f_plus, n_f_minus, self.empty_set_value),
             sv_m := sverad_f_minus(n_f_plus, n_f_minus,
-            gamma=self.g, no_player_value=self.no_player_value))
+            gamma=self.g, empty_set_value=self.empty_set_value))
         return sv_m
     
     def set_gamma(self, gamma_v: float):
@@ -137,11 +137,11 @@ class ExplainingSVR(SVR, ExplainingSVM):
     """
 
     def __init__(self, tol=0.001, C=1.0, epsilon=0.1, shrinking=True, cache_size=200, verbose=False, max_iter=- 1,
-                 no_player_value=0):
+                 empty_set_value=0):
         SVR.__init__(self,
                      kernel="rbf", tol=tol, C=C, epsilon=epsilon, shrinking=shrinking,
                      cache_size=cache_size, verbose=verbose, max_iter=max_iter) #rbf_kernel_closure_function(gamma=gamma) isnted of "rbf"
-        ExplainingSVM.__init__(self, no_player_value=no_player_value)
+        ExplainingSVM.__init__(self, empty_set_value=empty_set_value)
 
     def fit(self, X, y, sample_weight=None):
         x = super().fit(X, y, sample_weight=sample_weight)
@@ -151,7 +151,7 @@ class ExplainingSVR(SVR, ExplainingSVM):
 
     @property
     def expected_value(self):
-        return self.intercept_ + np.sum(self.dual_coef_) * self.no_player_value
+        return self.intercept_ + np.sum(self.dual_coef_) * self.empty_set_value
 
 
 class ExplainingSVC(SVC, ExplainingSVM):
@@ -160,7 +160,7 @@ class ExplainingSVC(SVC, ExplainingSVM):
     """
     def __init__(self, C=1.0, gamma_value=1.0, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
                  verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
-                 no_player_value=0):
+                 empty_set_value=0):
        
         
         # print("Gamma value passed:", gamma_value)
@@ -172,7 +172,7 @@ class ExplainingSVC(SVC, ExplainingSVM):
                      decision_function_shape=decision_function_shape, break_ties=break_ties,
                      random_state=random_state)
         
-        ExplainingSVM.__init__(self, no_player_value, gamma_value)
+        ExplainingSVM.__init__(self, empty_set_value, gamma_value)
         # print("Gamma set to self after super:", gamma_value)
         
         self.gamma_value = gamma_value
@@ -231,11 +231,11 @@ class ExplainingSVC(SVC, ExplainingSVM):
 
     @property
     def expected_value(self):
-        return -(self.intercept_ + np.sum(self.dual_coef_) * self.no_player_value) * self.probA_ + self.probB_
+        return -(self.intercept_ + np.sum(self.dual_coef_) * self.empty_set_value) * self.probA_ + self.probB_
 
 def create_SVC(C, gamma_value, shrinking=True, probability=True, tol=0.001, cache_size=200, class_weight=None, 
                      verbose=False, max_iter=- 1, decision_function_shape='ovr', break_ties=False, random_state=None,
-                     no_player_value=0):
+                     empty_set_value=0):
     return ExplainingSVC(C=C, gamma_value=gamma_value, shrinking=shrinking, probability=probability, tol=tol, cache_size=cache_size, 
                  class_weight=class_weight, verbose=verbose, max_iter=max_iter, decision_function_shape=decision_function_shape, 
-                 break_ties=break_ties, random_state=random_state, no_player_value=no_player_value)
+                 break_ties=break_ties, random_state=random_state, empty_set_value=empty_set_value)

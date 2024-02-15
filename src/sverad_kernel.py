@@ -90,9 +90,10 @@ class ExactRBFShapleyComputation:
     """Calculates the Shapley value according to the Shapley formalism for the RBF kernel.
         (Enumerates all possible coalitions, exponential cost!)
     """
-    def __init__(self, ref_arr, gamma: float = 1.0, sigma: float = None):
+    def __init__(self, ref_arr, gamma: float = 1.0, sigma: float = None, empty_set_value: float = 0.0):
         self.ref_arr = ref_arr
         self.gamma = gamma
+        self.empty_set_value = empty_set_value
         if sigma is not None:
             self.gamma = 1 / (2 * sigma ** 2)
 
@@ -103,7 +104,7 @@ class ExactRBFShapleyComputation:
         """
         return rbf_kernel_matrix(x, self.ref_arr.reshape((1, -1)), self.gamma)
 
-    #TODO implement no_player_value
+    #TODO implement empty_set_value
     def shapley_values(self, x):
         ref = self.ref_arr
         assert x.shape == ref.shape
@@ -122,7 +123,7 @@ class ExactRBFShapleyComputation:
                         # if the feature is absent in both instances, it does not affect the RBF kernel value.
                         # shapley value += 0 , or simply skip
                         continue
-                    shapley_value += (rbf_kernel(np.array([f_x]), np.array([f_ref]), gamma = self.gamma) -0) * inv_muiltinom_coeff(x.shape[0], coal_size)
+                    shapley_value += (rbf_kernel(np.array([f_x]), np.array([f_ref]), gamma = self.gamma) - self.empty_set_value) * inv_muiltinom_coeff(x.shape[0], coal_size) #it was -0 instead of self.empty_set_value
                     continue
                 feature_indices = np.arange(0, remaining_f_x.shape[0], dtype=int)
 
@@ -134,11 +135,11 @@ class ExactRBFShapleyComputation:
                     coal_x_fi = np.hstack([coal_x, [f_x]]) # Coalition with assessed feature
                     coal_ref_refi = np.hstack([coal_ref, [f_ref]])  # Coalition with assessed feature
                     if np.sum(coal_x_fi + coal_ref_refi) == 0:
-                        # if the all features (including the assessed feature) are absent in both instances, they do not affect the Tanimoto similarity.
+                        # if the all features (including the assessed feature) are absent in both instances, they do not affect the similarity.
                         # shapley value += 0 , or simply skip
                         continue
-                    if np.sum(coal_x + coal_ref) == 0: # if empty coalition (or coalition form only absent features), set subtracting term to 0
-                        shapley_value += (rbf_kernel(coal_x_fi, coal_ref_refi)-0) * inv_muiltinom_coeff(x.shape[0], coal_size)
+                    if np.sum(coal_x + coal_ref) == 0: # if empty coalition (or coalition form only absent features), set subtracting term to self.empty_set_value TODO: check, it was -0
+                        shapley_value += (rbf_kernel(coal_x_fi, coal_ref_refi) - self.empty_set_value) * inv_muiltinom_coeff(x.shape[0], coal_size)
                     else:
                         shapley_value += (rbf_kernel(coal_x_fi, coal_ref_refi) - rbf_kernel(coal_x, coal_ref)) * inv_muiltinom_coeff(x.shape[0], coal_size)
             shapley_vector.append(shapley_value)
@@ -146,7 +147,7 @@ class ExactRBFShapleyComputation:
     
 
 #functions to compute SV as SVERAD values
-def sverad_f_plus(n_intersecting_features: int, n_difference_features: int, no_player_value: float = 0.0):
+def sverad_f_plus(n_intersecting_features: int, n_difference_features: int, empty_set_value: float = 0.0):
     """
     Function to compute SV as SVERAD values for intersecting features. As described in the paper, this
     value only depends on the inverse multinomial coefficient. Given an intersecting
@@ -167,11 +168,11 @@ def sverad_f_plus(n_intersecting_features: int, n_difference_features: int, no_p
     if n_intersecting_features == 0:
         return 0 #conforming to SV formalism, absent feature do not contribute
     
-    #editing to support different no_player_value values
+    #editing to support different empty_set_value values
     #return inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
-    return (1 - no_player_value) * inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
+    return (1 - empty_set_value) * inv_muiltinom_coeff(n_intersecting_features+n_difference_features, 0)
 
-def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gamma:float = 1.0, sigma: float = None, no_player_value: float = 0.0):
+def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gamma:float = 1.0, sigma: float = None, empty_set_value: float = 0.0):
     """
     Function to compute SV as SVERAD values for symmetric difference features.
     We presente the simplified and more efficient solution as described in the paper.
@@ -200,9 +201,9 @@ def sverad_f_minus(n_intersecting_features: int, n_difference_features: int, gam
     sverad_value = 0
     total_features = n_intersecting_features + n_difference_features
 
-    # contribution to the empty coalition. Edited to support no_player_value
+    # contribution to the empty coalition. Edited to support empty_set_value
     #sverad_value += np.exp(-gamma) * inv_muiltinom_coeff(total_features, 0)
-    sverad_value += (np.exp(-gamma) - no_player_value) * inv_muiltinom_coeff(total_features, 0)
+    sverad_value += (np.exp(-gamma) - empty_set_value) * inv_muiltinom_coeff(total_features, 0)
 
     coalition_iterator = product(range(n_intersecting_features + 1), range(n_difference_features))
 
@@ -241,7 +242,7 @@ def rbf_kernel_optimized(n_difference_features: int, gamma:float = 1.0, sigma: f
 
 
 
-def compute_sverad_sv(x: np.ndarray, y: np.ndarray, gamma:float = 1.0, sigma: float = None):
+def compute_sverad_sv(x: np.ndarray, y: np.ndarray, gamma:float = 1.0, sigma: float = None, empty_set_value: float = 0.0):
 
     """
     Computes the SVERAD SVs for the RBF kernel given two instances.
@@ -274,8 +275,8 @@ def compute_sverad_sv(x: np.ndarray, y: np.ndarray, gamma:float = 1.0, sigma: fl
     num_intersecting_features = sum(intersection_xy)
     num_difference_features = sum(diff_xy)
 
-    sverad_value_f_plus_xy = sverad_f_plus(num_intersecting_features, num_difference_features)
-    sverad_value_f_minus_xy = sverad_f_minus(num_intersecting_features, num_difference_features, gamma=gamma)
+    sverad_value_f_plus_xy = sverad_f_plus(num_intersecting_features, num_difference_features, empty_set_value=empty_set_value)
+    sverad_value_f_minus_xy = sverad_f_minus(num_intersecting_features, num_difference_features, gamma=gamma, empty_set_value=empty_set_value)
 
     sverad_values_xy = intersection_xy * sverad_value_f_plus_xy + diff_xy * sverad_value_f_minus_xy
 
