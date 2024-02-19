@@ -1,0 +1,32 @@
+trainer_explainer:
+  DATASET_PATH: "data/dataset.tsv"
+  DATASET_PICKLE_PATH: "data/pickle/dataset_dict.p"
+  FINGERPRINTS_PICKLE_PATH: "data/pickle/fingerprint_gen_dict.p"
+  MODEL_PATH: "data/pickle/obtained_models_protocol_experiments.p"
+  EXPLANATION_PATH: "data/pickle/shap_dict_protocol_experiments.p"
+  PREDICTION_PATH: "data/prediction_df_protocol_experiments.tsv"
+  TARGET_UNIPROT_ID: "P0DMS8"
+  SAVE_DATASET_PICKLE: True
+  LOAD_DATASET_PICKLE: False
+  EMPTY_SET_VALUE: 0.0
+  SAVE_EXPLANATIONS: True
+  SAVE_MODELS: True
+  SEED: 42
+
+explanation_analyzer:
+  TARGET_UNIPROT_ID: "P0DMS8"
+  DATASET_PATH: "data/dataset.tsv"
+  SAVE_DATA_PATH: "results/figures/"
+  DATASET_PICKLE_PATH: "data/pickle/dataset_dict.p"
+  FINGERPRINTS_PICKLE_PATH: "data/pickle/fingerprint_gen_dict.p"
+  MODEL_PATH: "data/pickle/obtained_models_protocol_experiments.p"
+  EXPLANATION_PATH: "data/pickle/shap_dict_protocol_experiments.p"
+  PREDICTION_PATH: "data/prediction_df_protocol_experiments.tsv"
+  COLOR_PRESENT_FEATURES: "darkgreen"
+  COLOR_ABSENT_FEATURES: "darkred"
+  SAVE_PLOTS: True
+  SAVE_MAPPINGS: True
+  FIGURE_FORMAT: "svg" # "jpg", "png", "pdf", eps
+  SEED: 42 
+
+ 
