@@ -6,8 +6,8 @@ trainer_explainer:
   EXPLANATION_PATH: "data/pickle/shap_dict_protocol_experiments.p"
   PREDICTION_PATH: "data/prediction_df_protocol_experiments.tsv"
   TARGET_UNIPROT_ID: "P0DMS8"
-  SAVE_DATASET_PICKLE: False
-  LOAD_DATASET_PICKLE: True
+  SAVE_DATASET_PICKLE: True
+  LOAD_DATASET_PICKLE: False
   EMPTY_SET_VALUE: 0.0
   SAVE_EXPLANATIONS: True
   SAVE_MODELS: True
