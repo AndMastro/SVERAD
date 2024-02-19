@@ -53,6 +53,31 @@ sverad_shapley_values = sverad_model.feature_weights(X_test)
 
 If you want to indepentently compute SVERAD SV for RBF kernel in your code, use the function ```compute_sverad_sv()``` available in the ```sverad_kernel.py``` module. 
 
+###SVETA
+The repository contains also the code from [Calculation of exact Shapley values for support vector machines with Tanimoto kernel enables model interpretation](https://doi.org/10.1016/j.isci.2022.105023). SVETA allows the computation of exact Shapley values for SVM models based on the Tanimoto kernel. You can use SVETA in your code similarly as SVERAD:
+
+```python
+from sveta.svm import ExplainingSVC as SVETAExplainingSVC
+
+c = 1.0
+gamma = 1.0
+SEED = 42
+empty_set_value = 0.0
+
+sveta_model = SVETAExplainingSVC(C = c, random_state=SEED, no_player_value=empty_set_value)
+
+
+X_train = … #your training data samples
+y_train = … #your training data labels
+X_test = … #your test data samples
+
+sveta_model.fit(X_train, y_train)
+
+sveta_preds = model.predict(X_test)
+
+sveta_shapley_values = sveta_model.feature_weights(X_test)
+```
+
 ## Reproducibility
 
 The repo contains the source code and the notebooks usable to reproduce the experiments and results in the paper. It is possible to use the nooteboks provided to replicate the experiments:
