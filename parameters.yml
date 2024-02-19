@@ -22,9 +22,11 @@ explanation_analyzer:
   MODEL_PATH: "data/pickle/obtained_models_protocol_experiments.p"
   EXPLANATION_PATH: "data/pickle/shap_dict_protocol_experiments.p"
   PREDICTION_PATH: "data/prediction_df_protocol_experiments.tsv"
+  COLOR_PRESENT_FEATURES: "darkgreen"
+  COLOR_ABSENT_FEATURES: "darkred"
   SAVE_PLOTS: True
   SAVE_MAPPINGS: True
-  FIGURE_FORMAT: "jpg" # "jpg", "png", "pdf", eps
+  FIGURE_FORMAT: "svg" # "jpg", "png", "pdf", eps
   SEED: 42 
 
  

@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from os import makedirs
 from os.path import exists
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 import yaml
 # import pickle
 import dill
@@ -41,6 +41,8 @@ FINGERPRINTS_PICKLE_PATH = args["explanation_analyzer"]["FINGERPRINTS_PICKLE_PAT
 MODEL_PATH = args["trainer_explainer"]["MODEL_PATH"]
 EXPLANATION_PATH = args["trainer_explainer"]["EXPLANATION_PATH"]
 PREDICTION_PATH = args["trainer_explainer"]["PREDICTION_PATH"]
+COLOR_ABSENT_FEATURES = args["explanation_analyzer"]["COLOR_ABSENT_FEATURES"]
+COLOR_PRESENT_FEATURES = args["explanation_analyzer"]["COLOR_PRESENT_FEATURES"]
 
 set_seeds(SEED)
 
@@ -50,8 +52,6 @@ trial = 0
 
 SAVE_FIGURES_PATH = SAVE_DATA_PATH + dataset_name
 SAVE_MAPPINGS_PATH = SAVE_DATA_PATH + dataset_name + "/shapley_values_mapping/"
-
-FIGURE_FORMAT = "jpg"
 
 
 mpl.rcParams.update({'font.size': 14})
@@ -107,7 +107,7 @@ avg_diff = []
 avg_union = []
 
 support_vectors = [support_vectors_rbf, support_vectors_tanimoto]
-
+kernel_types = ["RBF", "Tanimoto"]
 for support_vectors_ in support_vectors:
     for i in range(num_samples):
         vector = dataset_dict[dataset_name].feature_matrix[i, :]
@@ -127,12 +127,12 @@ for support_vectors_ in support_vectors:
         avg_diff.append(n_difference.mean())
         avg_union.append(n_union_features.mean())
 
-
+    print(f"\nSVM with {kernel_types.pop(0)} kernel:")
     print(f"Average number of intersecting features: {np.mean(avg_intesecting)}")
     print(f"Average number of symmetric difference features: {np.mean(avg_diff)}")
     print(f"Average number of union features: {np.mean(avg_union)}")
     
-
+print("=====================================")
 
 # ## Model performances
 
@@ -170,9 +170,9 @@ svc_tanimoto_shapley_E = shap_dict[(dataset_name, trial, "SVC_Tanimoto")]["expec
 # In[11]:
 
 
-print("SVM RBF expected values: ", svc_rbf.expected_value[0])
-print("SVM Tanimoto expected values: ", svc_tanimoto.expected_value[0])
-
+print("SVM RBF expected value: ", svc_rbf.expected_value[0])
+print("SVM Tanimoto expected value: ", svc_tanimoto.expected_value[0])
+print("=====================================")
 
 
 if not exists(SAVE_FIGURES_PATH):
@@ -212,7 +212,7 @@ correct_predicted_df_molten.loc[correct_predicted_df_molten.variable == "absent_
 
 mpl.rcParams.update({'font.size': 16})
 fig, ax = plt.subplots() #fig, ax = plt.subplots() edited to save in larger plot
-sns.boxplot(data=correct_predicted_df_molten.query("algorithm == 'SVC_RBF'"), x="label_str", hue="variable_str", y="Shapley sum", hue_order=["Present features", "Absent features"])
+sns.boxplot(data=correct_predicted_df_molten.query("algorithm == 'SVC_RBF'"), x="label_str", hue="variable_str", y="Shapley sum", hue_order=["Present features", "Absent features"], palette=[COLOR_PRESENT_FEATURES, COLOR_ABSENT_FEATURES])
 xlim = ax.get_xlim()
 ax.hlines(0, *xlim, color="gray", ls="--")
 ax.set_xlim(xlim)
@@ -223,14 +223,14 @@ ax.set_ylabel(r"Sum of Shapley values for log odds")
 ax.legend(*ax.get_legend_handles_labels())
 plt.tight_layout() #added to save in larger plot. Remove if not needed
 if SAVE_PLOTS:
-    plt.savefig(SAVE_FIGURES_PATH + "boxplot_present_absent_sverad_svm." + FIGURE_FORMAT, dpi=300, bbox_inches='tight') #bbox_inches='tight'used with plt.tight_layout() to save in larger plot
+    plt.savefig(SAVE_FIGURES_PATH + "_boxplot_present_absent_sverad_svm." + FIGURE_FORMAT, dpi=300, bbox_inches='tight') #bbox_inches='tight'used with plt.tight_layout() to save in larger plot
 
 # ### SVs for SVM using SVETA
 
 
 mpl.rcParams.update({'font.size': 16})
 fig, ax = plt.subplots() #fig, ax = plt.subplots() edited to save in larger plot
-sns.boxplot(data=correct_predicted_df_molten.query("algorithm == 'SVC_Tanimoto'"), x="label_str", hue="variable_str", y="Shapley sum", hue_order=["Present features", "Absent features"])
+sns.boxplot(data=correct_predicted_df_molten.query("algorithm == 'SVC_Tanimoto'"), x="label_str", hue="variable_str", y="Shapley sum", hue_order=["Present features", "Absent features"], palette=[COLOR_PRESENT_FEATURES, COLOR_ABSENT_FEATURES])
 xlim = ax.get_xlim()
 ax.hlines(0, *xlim, color="gray", ls="--")
 ax.set_xlim(xlim)
@@ -241,14 +241,13 @@ ax.set_ylabel(r"Sum of Shapley values for log odds")
 ax.legend(*ax.get_legend_handles_labels())
 plt.tight_layout() #added to save in larger plot. Remove if not needed
 if SAVE_PLOTS:
-    plt.savefig(SAVE_FIGURES_PATH + "boxplot_present_absent_sveta_svm." + FIGURE_FORMAT, dpi=300, bbox_inches='tight') #bbox_inches='tight'used with plt.tight_layout() to save in larger plot
+    plt.savefig(SAVE_FIGURES_PATH + "_boxplot_present_absent_sveta_svm." + FIGURE_FORMAT, dpi=300, bbox_inches='tight') #bbox_inches='tight'used with plt.tight_layout() to save in larger plot
 
 # #### Contributions of all features of active compounds.
 
 # In[18]:
 
-print("Contribution of all features in active compounds.\n")
-
+print("\nContribution of all features in active compounds:")
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["present_shap", "absent_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["present_shap", "absent_shap"]].sum(axis=1).std())
 
@@ -260,8 +259,7 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 # In[19]:
 
-print("Contributions of present features in active compounds.\n")
-
+print("\nContributions of present features in active compounds:")
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["present_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["present_shap"]].sum(axis=1).std())
 
@@ -273,8 +271,7 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 # In[20]:
 
-print("Contributions of absent features in active compounds.\n")
-
+print("\nContributions of absent features in active compounds:")
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["absent_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 1")[["absent_shap"]].sum(axis=1).std())
 
@@ -286,7 +283,7 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 # In[21]:
 
-print("Contribution of all features in random compounds.\n")
+print("\nContribution of all features in random compounds:")
 
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["present_shap", "absent_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["present_shap", "absent_shap"]].sum(axis=1).std())
@@ -299,7 +296,7 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 # In[22]:
 
-print("Contributions of present features in random compounds.\n")
+print("\nContributions of present features in random compounds.\n")
 
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["present_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["present_shap"]].sum(axis=1).std())
@@ -312,7 +309,7 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 # In[23]:
 
-print("Contributions of absent features in random compounds.\n")
+print("\nContributions of absent features in random compounds.\n")
 
 print("Avg sum of SVs for SVM RBF: ", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["absent_shap"]].sum(axis=1).mean())
 print("Std dev", correct_predicted_df.query("algorithm == 'SVC_RBF' & label == 0")[["absent_shap"]].sum(axis=1).std())
@@ -327,12 +324,17 @@ print("Std dev", correct_predicted_df.query("algorithm == 'SVC_Tanimoto' & label
 
 
 if SAVE_MAPPINGS:
+
+    print("\n=====================================\n")
+    print("Generating mappings for all the correctly predicted test compounds...\n")
+    
     if not exists(SAVE_MAPPINGS_PATH + "active/SVERAD"):
         makedirs(SAVE_MAPPINGS_PATH + "active/SVERAD")
     if not exists(SAVE_MAPPINGS_PATH + "active/SVETA"):
         makedirs(SAVE_MAPPINGS_PATH + "active/SVETA")
 
     #for SVERAD SVM
+    print("Generating mappings for SVERAD SVM on active compunds...\n")
     test_active_df_SVM_RBF = trial_df.query("testset & label == 1 & prediction == 1 & algorithm == 'SVC_RBF'")
     for i, row in tqdm(test_active_df_SVM_RBF.iterrows(), total=len(test_active_df_SVM_RBF)):
         vis_cpd_idx = row["dataset_idx"]
@@ -345,6 +347,7 @@ if SAVE_MAPPINGS:
         fig.save(SAVE_MAPPINGS_PATH + "active/SVERAD/SVM_SVERAD_"+ str(vis_cpd_idx) + "_" + vis_cpd_smiles + ".png", dpi=(300,300))
         
     # for SVETA SVM
+    print("Generating mappings for SVETA SVM on active compunds...\n")
     test_active_df_SVM_Tanimoto = trial_df.query("testset & label == 1 & prediction == 1 & algorithm == 'SVC_Tanimoto'")
     for i, row in tqdm(test_active_df_SVM_Tanimoto.iterrows(), total=len(test_active_df_SVM_Tanimoto)):
         vis_cpd_idx = row["dataset_idx"]
@@ -358,15 +361,16 @@ if SAVE_MAPPINGS:
 
 
 
-if SAVE_MAPPINGS:
+
     if not exists(SAVE_MAPPINGS_PATH + "random/SVETA"):
         makedirs(SAVE_MAPPINGS_PATH + "random/SVETA")
     if not exists(SAVE_MAPPINGS_PATH + "random/SVERAD"):
         makedirs(SAVE_MAPPINGS_PATH + "random/SVERAD")
 
     #for SVERAD SVM
-    test_active_df_SVM_RBF = trial_df.query("testset & label == 0 & prediction == 0 & algorithm == 'SVC_RBF'")
-    for i, row in tqdm(test_active_df_SVM_RBF.iterrows(), total=len(test_active_df_SVM_RBF)):
+    print("Generating mappings for SVERAD SVM on random compunds...\n")
+    test_random_df_SVM_RBF = trial_df.query("testset & label == 0 & prediction == 0 & algorithm == 'SVC_RBF'")
+    for i, row in tqdm(test_random_df_SVM_RBF.iterrows(), total=len(test_random_df_SVM_RBF)):
         vis_cpd_idx = row["dataset_idx"]
         vis_cpd_smiles = dataset.nonstereo_aromatic_smiles[vis_cpd_idx]
         vis_cpd_mol_obj = Chem.MolFromSmiles(vis_cpd_smiles)
@@ -377,6 +381,7 @@ if SAVE_MAPPINGS:
         fig.save(SAVE_MAPPINGS_PATH + "random/SVERAD/SVM_SVERAD_"+ str(vis_cpd_idx) + "_" + vis_cpd_smiles + ".png", dpi=(300,300))
         
     # for SVETA SVM
+    print("Generating mappings for SVETA SVM on random compunds...\n")
     test_random_df_SVM_Tanimoto = trial_df.query("testset & label == 0 & prediction == 0 & algorithm == 'SVC_Tanimoto'")
     for i, row in tqdm(test_random_df_SVM_Tanimoto.iterrows(), total=len(test_random_df_SVM_Tanimoto)):
         vis_cpd_idx = row["dataset_idx"]
@@ -389,4 +394,4 @@ if SAVE_MAPPINGS:
         fig.save(SAVE_MAPPINGS_PATH + "random/SVETA/SVM_SVETA_"+ str(vis_cpd_idx) + "_" + vis_cpd_smiles + ".png", dpi=(300,300))
 
 end = time.time()
-print(f"Running the script took {end-start} seconds.")
+print(f"\nRunning the script took {end-start} seconds.")
