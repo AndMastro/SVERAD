@@ -10,7 +10,7 @@ This is the official repository for the work [**Calculation of exact Shapley val
 
 ## Before you start
 
-If you want to use the code, we suggest to create a ```conda``` environmnet with one of the provided environment files (tested on Ubuntu 20.04) and clone the repository.
+If you want to use the code, we suggest you create a ```conda``` environmnet with one of the provided environment files (tested on Ubuntu 20.04) and clone the repository.
 To install SVERAD, move to the ```src/sverad``` folder and run the command
 
 ```bash
