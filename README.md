@@ -64,6 +64,8 @@ then, instatiate the model as
 ```python
 sveta_model = SVETAExplainingSVC(C = c, random_state=SEED, no_player_value=empty_set_value)
 ```
+## Ready-to-use scripts
+We provide ready-to-use scripts to train and explain SVM models using both SVERAD and SVETA and analyze their explanations. ```trainer_explainer_script.py``` performs a grid search to train and optimize SVM models using the RBF and the Tanomoto kernels and then explains the prediction using SVERAD and SVETA exact Shapley value computation.  
 
 ## Reproducibility
 
