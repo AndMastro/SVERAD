@@ -54,7 +54,7 @@ sverad_shapley_values = sverad_model.feature_weights(X_test)
 If you want to indepentently compute SVERAD SV for RBF kernel in your code, use the function ```compute_sverad_sv()``` available in the ```sverad_kernel.py``` module. 
 
 ### SVETA
-The repository contains also the code from [Calculation of exact Shapley values for support vector machines with Tanimoto kernel enables model interpretation](https://doi.org/10.1016/j.isci.2022.105023). SVETA allows the computation of exact Shapley values for SVM models based on the Tanimoto kernel. You can use SVETA in your code similarly as SVERAD. Install it from the ```src/sveta``` folder and import it as
+The repository also contains the code from [Calculation of exact Shapley values for support vector machines with Tanimoto kernel enables model interpretation](https://doi.org/10.1016/j.isci.2022.105023). SVETA allows the computation of exact Shapley values for SVM models based on the Tanimoto kernel. You can use SVETA in your code similarly as SVERAD. Install it from the ```src/sveta``` folder and import it as
 
 ```python
 from sveta.svm import ExplainingSVC as SVETAExplainingSVC
