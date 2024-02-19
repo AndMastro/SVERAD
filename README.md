@@ -28,6 +28,29 @@ to install in development mode.
 
 The class ```ExplainingSVC``` contains all the facilities needed to train a Support Vector Classifier and explain its predictions in terms of exact SVERAD Shapley values.
 
+You can import and use SVERAD in you code:
+
+```python
+from sverad.sverad_svm import ExplainingSVC as SVERADExplainingSVC
+
+c = 1.0
+gamma = 1.0
+SEED = 42
+empty_set_value = 0.0
+
+sverad_model = SVERADExplainingSVC(C = c, gamma_val = gamma, random_state=SEED, empty_set_value=empty_set_value)
+
+X_train = … #your training data samples
+y_train = … #your training data labels
+X_test = … #your test data samples
+
+sverad_model.fit(X_train, y_train)
+
+sverad_preds = model.predict(X_test)
+
+sverad_shapley_values = sverad_model.feature_weights(X_test)
+```
+
 If you want to indepentently compute SVERAD SV for RBF kernel in your code, use the function ```compute_sverad_sv()``` available in the ```sverad_kernel.py``` module. 
 
 ## Reproducibility
