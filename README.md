@@ -3,7 +3,8 @@
 </p>
 
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) [![DOI](https://zenodo.org/badge/632345309.svg)](https://zenodo.org/doi/10.5281/zenodo.10679659)
+
 
 # SVERAD: Shapley Value-Expressed Radial Basis Function
 This is the official repository for the work [**Calculation of exact Shapley values for explaining support vector machine models using the radial basis function kernel**](https://www.nature.com/articles/s41598-023-46930-2).
