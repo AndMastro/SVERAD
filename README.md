@@ -9,8 +9,6 @@
 # SVERAD: Shapley Value-Expressed Radial Basis Function
 This is the official repository for the work [**Calculation of exact Shapley values for explaining support vector machine models using the radial basis function kernel**](https://www.nature.com/articles/s41598-023-46930-2).
 
-This branch is in line with the protocol paper and won't be further updated to allow the reproducibility of the experiments. For up-to-date content, always refer to the ```main``` branch. At the moment, this branch is up-to-date with the ```main``` branch.
-
 ## Before you start
 
 If you want to use the code, we suggest you create a ```conda``` environmnet with one of the provided environment files (tested on Ubuntu 20.04) and clone the repository.
