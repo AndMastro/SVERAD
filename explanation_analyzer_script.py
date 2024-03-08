@@ -334,7 +334,7 @@ if SAVE_MAPPINGS:
         makedirs(SAVE_MAPPINGS_PATH + "active/SVETA")
 
     #for SVERAD SVM
-    print("Generating mappings for SVERAD SVM on active compunds...\n")
+    print("Generating mappings for SVERAD SVM on active compounds...\n")
     test_active_df_SVM_RBF = trial_df.query("testset & label == 1 & prediction == 1 & algorithm == 'SVC_RBF'")
     for i, row in tqdm(test_active_df_SVM_RBF.iterrows(), total=len(test_active_df_SVM_RBF)):
         vis_cpd_idx = row["dataset_idx"]
@@ -347,7 +347,7 @@ if SAVE_MAPPINGS:
         fig.save(SAVE_MAPPINGS_PATH + "active/SVERAD/SVM_SVERAD_"+ str(vis_cpd_idx) + "_" + vis_cpd_smiles + ".png", dpi=(300,300))
         
     # for SVETA SVM
-    print("Generating mappings for SVETA SVM on active compunds...\n")
+    print("Generating mappings for SVETA SVM on active compounds...\n")
     test_active_df_SVM_Tanimoto = trial_df.query("testset & label == 1 & prediction == 1 & algorithm == 'SVC_Tanimoto'")
     for i, row in tqdm(test_active_df_SVM_Tanimoto.iterrows(), total=len(test_active_df_SVM_Tanimoto)):
         vis_cpd_idx = row["dataset_idx"]
@@ -368,7 +368,7 @@ if SAVE_MAPPINGS:
         makedirs(SAVE_MAPPINGS_PATH + "random/SVERAD")
 
     #for SVERAD SVM
-    print("Generating mappings for SVERAD SVM on random compunds...\n")
+    print("Generating mappings for SVERAD SVM on random compounds...\n")
     test_random_df_SVM_RBF = trial_df.query("testset & label == 0 & prediction == 0 & algorithm == 'SVC_RBF'")
     for i, row in tqdm(test_random_df_SVM_RBF.iterrows(), total=len(test_random_df_SVM_RBF)):
         vis_cpd_idx = row["dataset_idx"]
@@ -381,7 +381,7 @@ if SAVE_MAPPINGS:
         fig.save(SAVE_MAPPINGS_PATH + "random/SVERAD/SVM_SVERAD_"+ str(vis_cpd_idx) + "_" + vis_cpd_smiles + ".png", dpi=(300,300))
         
     # for SVETA SVM
-    print("Generating mappings for SVETA SVM on random compunds...\n")
+    print("Generating mappings for SVETA SVM on random compounds...\n")
     test_random_df_SVM_Tanimoto = trial_df.query("testset & label == 0 & prediction == 0 & algorithm == 'SVC_Tanimoto'")
     for i, row in tqdm(test_random_df_SVM_Tanimoto.iterrows(), total=len(test_random_df_SVM_Tanimoto)):
         vis_cpd_idx = row["dataset_idx"]
