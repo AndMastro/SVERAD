@@ -3,7 +3,8 @@
 </p>
 
 
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) [![DOI](https://zenodo.org/badge/632345309.svg)](https://zenodo.org/doi/10.5281/zenodo.10679659)
+
 
 # SVERAD: Shapley Value-Expressed Radial Basis Function
 This is the official repository for the work [**Calculation of exact Shapley values for explaining support vector machine models using the radial basis function kernel**](https://www.nature.com/articles/s41598-023-46930-2).
@@ -67,7 +68,7 @@ then, instatiate the model as
 sveta_model = SVETAExplainingSVC(C = C, random_state=SEED, no_player_value=EMPTY_SET_VALUE)
 ```
 ## Ready-to-use scripts
-We provide ready-to-use scripts to train and explain SVM models using both SVERAD and SVETA and analyze their explanations. ```trainer_explainer_script.py``` performs a grid search to train and optimize SVM models with the RBF and Tanomoto kernels and then explains the prediction using SVERAD and SVETA exact Shapley value computation. ```explanation_analyzer_script.py``` performs an analysis of the explanations, generating boxplots indicating the contributions of features present and absent in test instances. Moreover, important features are mapped to correctly predicted test compounds, generating figures such as the one reported below:
+We provide ready-to-use scripts to train and explain SVM models using both SVERAD and SVETA and analyze their explanations. ```trainer_explainer_script.py``` performs a grid search to train and optimize SVM models with the RBF and Tanomoto kernels and then explains the prediction using SVERAD and SVETA exact Shapley value computation. ```explanation_analyzer_script.py``` performs an analysis of the explanations, generating boxplots indicating the contributions of features present and absent in test instances. The scripts load parameters from the ```parameters.yml``` file, which can be edited according to needs. Moreover, important features are mapped to correctly predicted test compounds, generating figures such as the one reported below:
 
 <p align="center">
   <img src="results/figures/P0DMS8/shapley_values_mapping/random/SVETA/SVM_SVETA_304_CC(=O)Nc1nc(C)c(-c2nc(C3CCOC3)no2)s1.png" alt="Feature mapping" width=35%>
