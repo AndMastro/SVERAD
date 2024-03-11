@@ -85,6 +85,8 @@ The repo contains the source code and the notebooks usable to reproduce the expe
 * ```calculation_SVs_SVM_RF.ipynb``` is used to both train and optimize the SVM and RF models via Grid Search and to compute exact Shapley values with SVERAD and TreeSHAP and SHAP values with KernelSHAP. Note that setting the flag ```USE_SHAP``` to ```True``` will lead to long computation times (between 5 and 7 hours) due to the usage of the KernelSHAP method.
 * ```analysis_SVs_SVM_RF.ipynb``` derives analyses and statistics on the computed SV and SHAP values.
 
+[SHAP](https://github.com/shap/shap) should be installed to use it in the notebooks.
+
 ## Running times
 
 As a reference measurement for comparison, executing SVERAD on the dataset provided within the repo with a machine mounting an Intel Core i7-12700H with 4.70 GHz of maximum clock speed and 16 GB of RAM took around **22 seconds**, analogously to TreeSHAP, while running KernelSHAP calculations took more than 5.5 hours.
