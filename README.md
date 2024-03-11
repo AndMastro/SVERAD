@@ -80,10 +80,10 @@ We provide ready-to-use scripts to train and explain SVM models using both SVERA
 
 The repo contains the source code and the notebooks usable to reproduce the experiments and results in the Scientific Reports paper. It is possible to use the nooteboks provided to replicate the experiments:
 
-* ```explanations_rbf_random_vectors.ipynb``` replicates the experiments for the computation of exact SV with small randomly geenrated vectors.
+* ```explanations_rbf_random_vectors.ipynb``` replicates the experiments for the computation of exact Shapley values with small randomly geenrated vectors.
 * ```rbf_50_compounds_SVERAD_vs_SHAP.ipynb``` compares SVERAD and SHAP for randomly drawn compounds.
 * ```calculation_SVs_SVM_RF.ipynb``` is used to both train and optimize the SVM and RF models via Grid Search and to compute exact Shapley values with SVERAD and TreeSHAP and SHAP values with KernelSHAP. Note that setting the flag ```USE_SHAP``` to ```True``` will lead to long computation times (between 5 and 7 hours) due to the usage of the KernelSHAP method.
-* ```analysis_SVs_SVM_RF.ipynb``` derives analyses and statistics on the computed SV and SHAP values.
+* ```analysis_SVs_SVM_RF.ipynb``` derives analyses and statistics on the computed Shapley values and SHAP values.
 
 [SHAP](https://github.com/shap/shap) should be installed to use it in the notebooks.
 
