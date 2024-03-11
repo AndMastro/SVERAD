@@ -4,7 +4,6 @@ from scipy.special import binom
 from scipy import sparse
 from itertools import combinations
 from sverad.utils import inv_muiltinom_coeff
-from sklearn.metrics.pairwise import euclidean_distances
 
 def rbf_kernel_matrix(matrix_a: np.ndarray, matrix_b: np.ndarray, gamma: float = 1.0, sigma: float = None):
     """Calculates the RBF kernel between two matrices and returns a similarity matrix.
