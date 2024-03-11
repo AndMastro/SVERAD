@@ -3,7 +3,7 @@ from setuptools import find_packages
 
 setup(
     name='SVERAD',
-    version='1.0.0',
+    version='1.0.1',
     author='Andrea Mastropietro',
     license="MIT",
     #packages = find_packages('src'),
@@ -11,6 +11,6 @@ setup(
     #package_dir={'sverad': 'src'},
     author_email='mastropietro@diag.uniroma1.it',
     url='https://github.com/AndMastro/SVERAD',
-    description='Method to perform exact Shapley value computation for SVM models using binary fingerprints.',
-    install_requires=['numpy', 'matplotlib' , 'scikit-learn', 'scipy', 'rdkit', 'bidict'] #check if it is necessary to add more
+    description='Method to perform exact Shapley value computation for SVM models with the RBF kernel using binary fingerprints.',
+    install_requires=['numpy', 'matplotlib' , 'scikit-learn', 'scipy', 'rdkit', 'bidict'] 
 )
