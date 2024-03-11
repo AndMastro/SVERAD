@@ -87,7 +87,7 @@ The repo contains the source code and the notebooks usable to reproduce the expe
 
 ## Running times
 
-As a reference measurement for comparison, executing SVERAD on the dataset provided within the repo with a machine mounting an Intel Core i7-12700H with 4.70 GHz of maximum clock speed and 16 GB of RAM took around 22 seconds, analogously to TreeSHAP, while running KernelSHAP calculations took more than 5.5 hours.
+As a reference measurement for comparison, executing SVERAD on the dataset provided within the repo with a machine mounting an Intel Core i7-12700H with 4.70 GHz of maximum clock speed and 16 GB of RAM took around **22 seconds**, analogously to TreeSHAP, while running KernelSHAP calculations took more than 5.5 hours.
 
 ### Contacts
 
